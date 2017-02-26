@@ -2,6 +2,9 @@ package notorm
 
 import (
 	"testing"
+
+	_ "github.com/mattn/go-sqlite3"
+
 )
 
 type User struct {

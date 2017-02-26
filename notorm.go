@@ -6,8 +6,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
 func sqlType(t reflect.Kind) string {
@@ -123,17 +121,4 @@ func (no *NotOrm) SelectAll(where string, o interface{}) error {
 		return err
 	}
 	return nil
-}
-
-func main() {
-	no := NewConnection("sqlite3", "notorm.db")
-	no.Debug(true)
-	no.CreateTable(User{})
-	no.CreateTable(Email{})
-	no.Insert(User{1, "Simon", "OCT"})
-	u := User{}
-	err := no.SelectAll("WHERE id=1", &u)
-	if err == nil {
-		fmt.Printf("%v", u)
-	}
 }
