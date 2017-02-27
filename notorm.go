@@ -1,5 +1,8 @@
 package notorm
 
+// TODO
+// Insert() should take pointer?
+
 import (
 	"database/sql"
 	"fmt"
@@ -67,7 +70,7 @@ func (no *NotOrm) CreateTable(o interface{}) error {
 		name := fieldName(f.Name)
 		values = append(values, name+" TYPE "+sqlType(f.Type.Kind()))
 	}
-	sql := "CREATE TABLE IF NOT EXISTS " + table + " (" + strings.Join(values, ",") + ");"
+	sql := "CREATE TABLE IF NOT EXISTS " + table + " (" + strings.Join(values, ", ") + ");"
 	if no.debug {
 		fmt.Println(sql)
 	}
@@ -105,7 +108,8 @@ func (no *NotOrm) Insert(o interface{}) {
 	no.db.Exec(sql)
 }
 
-func (no *NotOrm) SelectAll(where string, o interface{}) error {
+// Select a single row and write to a point to a structure
+func (no *NotOrm) Select(where string, o interface{}) error {
 	val := reflect.Indirect(reflect.ValueOf(o)) // o should be a pointer
 	_type := val.Type()
 	var fields []interface{}
@@ -121,4 +125,41 @@ func (no *NotOrm) SelectAll(where string, o interface{}) error {
 		return err
 	}
 	return nil
+}
+
+// Select **ALL** rows and write to an array of to a structure
+// NOTE: no pagination support
+// o should be an empty struct that indicates which table to search
+// returns a list of all elements that fit the where string
+func (no *NotOrm) SelectAll(where string, o interface{}) ([]interface{}, error) {
+	_type := reflect.TypeOf(o)
+	sql := "SELECT * FROM " + tableName(_type.Name()) + " " + where + ";"
+	if no.debug {
+		fmt.Println(sql)
+	}
+	var arr []interface{}
+	rows, err := no.db.Query(sql)
+	defer rows.Close()
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var fields []interface{}
+		val := reflect.New(_type) // creates new object each time
+		for i := 0; i < _type.NumField(); i++ {
+			// There should be a better way of getting the address of a field
+			// from a struct pointer.
+			fields = append(fields, reflect.Indirect(val).Field(i).Addr().Interface())
+		}
+		err := rows.Scan(fields...)
+		if err != nil {
+			break
+		}
+		arr = append(arr, val.Interface())
+	}
+	if err != nil {
+		return nil, err
+	} else {
+		return arr, nil
+	}
 }
