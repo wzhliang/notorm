@@ -6,6 +6,11 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+const (
+	_dbDriver = "mysql"
+	_dbParam  = "root:rootroot@tcp(127.0.0.1:3306)/config"
+)
+
 type User struct {
 	ID      int
 	Name    string
@@ -19,7 +24,7 @@ type Email struct {
 }
 
 func TestAll(t *testing.T) {
-	no := NewConnection("sqlite3", "notorm.db")
+	no := NewConnection(_dbDriver, _dbParam)
 	no.CreateTable(User{})
 	no.CreateTable(Email{})
 	no.Insert(User{1, "Simon", "OCT"})
@@ -55,21 +60,21 @@ func TestAll(t *testing.T) {
 }
 
 func TestSelectAll(t *testing.T) {
-	no := NewConnection("sqlite3", "notorm1.db")
+	no := NewConnection(_dbDriver, _dbParam)
+	no.Debug(true)
 	no.CreateTable(User{})
 	no.CreateTable(Email{})
-	no.Debug(true)
-	no.Insert(User{1, "Simon", "OCT"})
-	no.Insert(Email{3, "simon3@foo.com", 1})
-	no.Insert(Email{4, "simon4@foo.com", 1})
-	no.Insert(Email{5, "simon5@foo.com", 1})
-	no.Insert(Email{6, "simon6@foo.com", 1})
-	arr, err := no.SelectAll("WHERE userid=1", Email{})
+	no.Insert(User{2, "Simon", "OCT"})
+	no.Insert(Email{3, "simon3@foo.com", 2})
+	no.Insert(Email{4, "simon4@foo.com", 2})
+	no.Insert(Email{5, "simon5@foo.com", 2})
+	no.Insert(Email{6, "simon6@foo.com", 2})
+	arr, err := no.SelectAll("WHERE userid=2", Email{})
 	if err != nil {
 		t.Errorf("failed.")
 	}
 	if len(arr) != 4 {
-		t.Errorf("should have 4 items")
+		t.Errorf("should have 4 items: %d", len(arr))
 	}
 	email := arr[0].(*Email)
 	if email.ID != 3 {

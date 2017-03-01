@@ -9,12 +9,15 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func sqlType(t reflect.Kind) string {
 	switch {
 	case t == reflect.String:
-		return "VARCHAR"
+		return "VARCHAR(256)"
 	case t == reflect.Int:
 		return "INTEGER"
 	}
@@ -50,6 +53,7 @@ func NewConnection(driver string, param string) *NotOrm {
 	no := new(NotOrm)
 	db, err := sql.Open(driver, param)
 	if err != nil {
+		fmt.Printf("%v", err)
 		return nil
 	} else {
 		no.db = db
@@ -68,15 +72,15 @@ func (no *NotOrm) CreateTable(o interface{}) error {
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
 		name := fieldName(f.Name)
-		values = append(values, name+" TYPE "+sqlType(f.Type.Kind()))
+		values = append(values, name+" "+sqlType(f.Type.Kind()))
 	}
 	sql := "CREATE TABLE IF NOT EXISTS " + table + " (" + strings.Join(values, ", ") + ");"
 	if no.debug {
 		fmt.Println(sql)
 	}
-	no.db.Exec(sql)
+	_, err := no.db.Exec(sql)
 
-	return nil
+	return err
 }
 
 func fieldValue(value interface{}, kind reflect.Kind) string {
@@ -105,7 +109,14 @@ func (no *NotOrm) Insert(o interface{}) {
 	if no.debug {
 		fmt.Println(sql)
 	}
-	no.db.Exec(sql)
+	r, err := no.db.Exec(sql)
+	if err != nil {
+		fmt.Printf("failed: %v", err)
+	}
+	rows, err := r.RowsAffected()
+	if rows != 1 {
+		fmt.Printf("failed: %v", r)
+	}
 }
 
 // Select a single row and write to a point to a structure
