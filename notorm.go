@@ -2,6 +2,7 @@ package notorm
 
 // TODO
 // Insert() should take pointer?
+// avoid mysql keyword
 
 import (
 	"database/sql"
@@ -14,7 +15,27 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func sqlType(t reflect.Kind) string {
+func splitTag(tag string) map[string]string {
+	ret := make(map[string]string)
+	list := strings.Split(tag, ",")
+	for _, seg := range list {
+		kv := strings.Split(seg, "=")
+		if len(kv) != 2 {
+			return nil
+		}
+		ret[kv[0]] = kv[1]
+	}
+
+	return ret
+}
+func sqlType(f reflect.StructField) string {
+	tags := splitTag(f.Tag.Get("mysql"))
+	typ, ok := tags["type"]
+	if ok {
+		return typ // TODO: check type
+	}
+
+	t := f.Type.Kind()
 	switch {
 	case t == reflect.String:
 		return "VARCHAR(256)"
@@ -72,7 +93,7 @@ func (no *NotOrm) CreateTable(o interface{}) error {
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
 		name := fieldName(f.Name)
-		values = append(values, name+" "+sqlType(f.Type.Kind()))
+		values = append(values, name+" "+sqlType(f))
 	}
 	sql := "CREATE TABLE IF NOT EXISTS " + table + " (" + strings.Join(values, ", ") + ");"
 	if no.debug {

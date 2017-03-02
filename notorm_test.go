@@ -8,7 +8,7 @@ import (
 
 const (
 	_dbDriver = "mysql"
-	_dbParam  = "root:rootroot@tcp(127.0.0.1:3306)/config"
+	_dbParam  = "root:rootroot@tcp(127.0.0.1:3306)/notorm"
 )
 
 type User struct {
@@ -21,6 +21,11 @@ type Email struct {
 	ID     int
 	Email  string
 	UserID int
+}
+
+type Article struct {
+	ID      int
+	Content string `mysql:"type=TEXT"`
 }
 
 func TestAll(t *testing.T) {
@@ -84,4 +89,10 @@ func TestSelectAll(t *testing.T) {
 	if email.ID != 6 {
 		t.Errorf("Wrong email id: %d\n", email.ID)
 	}
+}
+
+func TestType(t *testing.T) {
+	no := NewConnection(_dbDriver, _dbParam)
+	no.Debug(true)
+	no.CreateTable(Article{})
 }
