@@ -107,7 +107,7 @@ func (no *NotOrm) CreateTable(o interface{}) error {
 func fieldValue(value interface{}, kind reflect.Kind) string {
 	switch {
 	case kind == reflect.String:
-		return `"` + value.(string) + `"`
+		return `'` + strings.Replace(value.(string), "'", `\'`, -1) + `'`
 	case kind == reflect.Int:
 		return strconv.FormatInt(value.(int64), 10)
 	}
