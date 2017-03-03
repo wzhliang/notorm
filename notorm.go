@@ -169,7 +169,7 @@ func (no *NotOrm) SelectAll(where string, o interface{}) ([]interface{}, error) 
 	if no.debug {
 		fmt.Println(sql)
 	}
-	var arr []interface{}
+	arr := make([]interface{}, 0)
 	rows, err := no.db.Query(sql)
 	defer rows.Close()
 	if err != nil {
