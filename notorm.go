@@ -28,8 +28,13 @@ func splitTag(tag string) map[string]string {
 
 	return ret
 }
-func sqlType(f reflect.StructField) string {
-	tags := splitTag(f.Tag.Get("mysql"))
+
+func getTags(f reflect.StructField) map[string]string {
+	return splitTag(f.Tag.Get("mysql"))
+}
+
+// The signature of this func is far from ideal
+func sqlType(f reflect.StructField, tags map[string]string) string {
 	typ, ok := tags["type"]
 	if ok {
 		return typ // TODO: check type
@@ -43,6 +48,15 @@ func sqlType(f reflect.StructField) string {
 		return "INTEGER"
 	}
 	panic("Unknown type")
+}
+
+func sqlConstraints(tags map[string]string) string {
+	c, ok := tags["constraints"]
+	if ok {
+		return c
+	} else {
+		return ""
+	}
 }
 
 func tableName(name string) string {
@@ -93,7 +107,15 @@ func (no *NotOrm) CreateTable(o interface{}) error {
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
 		name := fieldName(f.Name)
-		values = append(values, name+" "+sqlType(f))
+		tags := getTags(f)
+		items := make([]string, 0)
+		items = append(items, name)
+		items = append(items, sqlType(f, tags))
+		items = append(items, sqlConstraints(tags))
+		if f.Name == "ID" { // hard-coded magic
+			items = append(items, "PRIMARY KEY AUTO_INCREMENT")
+		}
+		values = append(values, strings.Join(items, " "))
 	}
 	sql := "CREATE TABLE IF NOT EXISTS " + table + " (" + strings.Join(values, ", ") + ");"
 	if no.debug {
@@ -121,6 +143,9 @@ func (no *NotOrm) Insert(o interface{}) {
 	var fields []string
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
+		if f.Name == "ID" {
+			continue
+		}
 		fields = append(fields, fieldName(f.Name))
 		v := getField(o, f.Name, f.Type.Kind())
 		values = append(values, fieldValue(v, f.Type.Kind()))

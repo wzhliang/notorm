@@ -26,6 +26,7 @@ type Email struct {
 type Article struct {
 	ID      int
 	Content string `mysql:"type=TEXT"`
+	Uniq    string `mysql:"constraints=UNIQUE NOT NULL"`
 }
 
 func TestAll(t *testing.T) {
@@ -47,13 +48,13 @@ func TestAll(t *testing.T) {
 	if u.Address != "OCT" {
 		t.Errorf("address error: %d\n", u.Address)
 	}
-	no.Insert(Email{3, "simon@foo.com", 1})
+	no.Insert(Email{1, "simon@foo.com", 1})
 	e := Email{}
-	err = no.Select("WHERE id=3", &e)
+	err = no.Select("WHERE id=1", &e)
 	if err != nil {
 		t.Error("Failed to select")
 	}
-	if e.ID != 3 {
+	if e.ID != 1 {
 		t.Errorf("id error: %d\n", e.ID)
 	}
 	if e.Email != "simon@foo.com" {
@@ -70,10 +71,10 @@ func TestSelectAll(t *testing.T) {
 	no.CreateTable(User{})
 	no.CreateTable(Email{})
 	no.Insert(User{2, "Simon", "OCT"})
-	no.Insert(Email{3, "simon3@foo.com", 2})
-	no.Insert(Email{4, "simon4@foo.com", 2})
-	no.Insert(Email{5, "simon5@foo.com", 2})
-	no.Insert(Email{6, "simon6@foo.com", 2})
+	no.Insert(Email{2, "simon3@foo.com", 2})
+	no.Insert(Email{3, "simon4@foo.com", 2})
+	no.Insert(Email{4, "simon5@foo.com", 2})
+	no.Insert(Email{5, "simon6@foo.com", 2})
 	arr, err := no.SelectAll("WHERE userid=2", Email{})
 	if err != nil {
 		t.Errorf("failed.")
@@ -82,11 +83,11 @@ func TestSelectAll(t *testing.T) {
 		t.Errorf("should have 4 items: %d", len(arr))
 	}
 	email := arr[0].(*Email)
-	if email.ID != 3 {
+	if email.ID != 2 {
 		t.Errorf("Wrong email id: %d\n", email.ID)
 	}
 	email = arr[3].(*Email)
-	if email.ID != 6 {
+	if email.ID != 5 {
 		t.Errorf("Wrong email id: %d\n", email.ID)
 	}
 }
