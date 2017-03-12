@@ -136,7 +136,7 @@ func fieldValue(value interface{}, kind reflect.Kind) string {
 	panic("Unknown type")
 }
 
-func (no *NotOrm) Insert(o interface{}) {
+func (no *NotOrm) Insert(o interface{}) error {
 	t := reflect.TypeOf(o)
 	table := tableName(t.Name())
 	var values []string
@@ -155,13 +155,12 @@ func (no *NotOrm) Insert(o interface{}) {
 	if no.debug {
 		fmt.Println(sql)
 	}
-	r, err := no.db.Exec(sql)
+	_, err := no.db.Exec(sql)
 	if err != nil {
 		fmt.Printf("failed: %v", err)
-	}
-	rows, err := r.RowsAffected()
-	if rows != 1 {
-		fmt.Printf("failed: %v", r)
+		return err
+	} else {
+		return nil
 	}
 }
 
