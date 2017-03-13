@@ -219,3 +219,58 @@ func (no *NotOrm) SelectAll(where string, o interface{}) ([]interface{}, error) 
 		return arr, nil
 	}
 }
+
+func (no *NotOrm) Count(where string, o interface{}) (int64, error) {
+	_type := reflect.TypeOf(o)
+	sql := "SELECT COUNT(*) FROM " + tableName(_type.Name()) + " " + where + ";"
+	if no.debug {
+		fmt.Println(sql)
+	}
+	var count int64
+	err := no.db.QueryRow(sql).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (no *NotOrm) SelectPage(where string, page int, pageSize int, o interface{}) ([]interface{}, error) {
+	_type := reflect.TypeOf(o)
+	start := page * pageSize
+	var sql string
+	if where == "" {
+		sql = fmt.Sprintf("SELECT * FROM %s WHERE ID>%d LIMIT %d;",
+			tableName(_type.Name()), start, pageSize)
+	} else {
+		sql = fmt.Sprintf("SELECT * FROM %s %s AND ID>%d LIMIT %d;",
+			tableName(_type.Name()), where, start, pageSize)
+	}
+	if no.debug {
+		fmt.Println(sql)
+	}
+	arr := make([]interface{}, 0)
+	rows, err := no.db.Query(sql)
+	defer rows.Close()
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var fields []interface{}
+		val := reflect.New(_type) // creates new object each time
+		for i := 0; i < _type.NumField(); i++ {
+			// There should be a better way of getting the address of a field
+			// from a struct pointer.
+			fields = append(fields, reflect.Indirect(val).Field(i).Addr().Interface())
+		}
+		err := rows.Scan(fields...)
+		if err != nil {
+			break
+		}
+		arr = append(arr, val.Interface())
+	}
+	if err != nil {
+		return nil, err
+	} else {
+		return arr, nil
+	}
+}
