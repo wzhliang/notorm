@@ -176,11 +176,7 @@ func (no *NotOrm) Select(where string, o interface{}) error {
 	if no.debug {
 		fmt.Println(sql)
 	}
-	err := no.db.QueryRow(sql).Scan(fields...)
-	if err == nil {
-		return err
-	}
-	return nil
+	return no.db.QueryRow(sql).Scan(fields...)
 }
 
 // Select **ALL** rows and write to an array of to a structure
