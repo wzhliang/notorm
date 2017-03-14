@@ -235,8 +235,11 @@ func (no *NotOrm) Count(where string, o interface{}) (int64, error) {
 }
 
 func (no *NotOrm) SelectPage(where string, page int, pageSize int, o interface{}) ([]interface{}, error) {
+	if page <= 0 || pageSize <= 0 {
+		return nil, fmt.Errorf("page and pageSize has to start from 1")
+	}
 	_type := reflect.TypeOf(o)
-	start := page * pageSize
+	start := (page - 1) * pageSize // mysql id starts from 1
 	var sql string
 	if where == "" {
 		sql = fmt.Sprintf("SELECT * FROM %s WHERE ID>%d LIMIT %d;",
@@ -248,12 +251,12 @@ func (no *NotOrm) SelectPage(where string, page int, pageSize int, o interface{}
 	if no.debug {
 		fmt.Println(sql)
 	}
-	arr := make([]interface{}, 0)
 	rows, err := no.db.Query(sql)
 	defer rows.Close()
 	if err != nil {
 		return nil, err
 	}
+	arr := make([]interface{}, 0)
 	for rows.Next() {
 		var fields []interface{}
 		val := reflect.New(_type) // creates new object each time
@@ -273,4 +276,21 @@ func (no *NotOrm) SelectPage(where string, page int, pageSize int, o interface{}
 	} else {
 		return arr, nil
 	}
+}
+
+func (no *NotOrm) Delete(where string, o interface{}) (int64, error) {
+	_type := reflect.TypeOf(o)
+	sql := "DELETE FROM " + tableName(_type.Name()) + " " + where + ";"
+	if no.debug {
+		fmt.Println(sql)
+	}
+	rslt, err := no.db.Exec(sql)
+	if err != nil {
+		return 0, err
+	}
+	count, err := rslt.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
 }

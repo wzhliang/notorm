@@ -108,6 +108,7 @@ func TestPage(t *testing.T) {
 	no := NewConnection(_dbDriver, _dbParam)
 	no.Debug(true)
 	no.CreateTable(Student{})
+	// Insert 9 students
 	for i := 0; i < 9; i++ {
 		no.Insert(Student{Name: "John", Grade: i % 3})
 	}
@@ -121,14 +122,14 @@ func TestPage(t *testing.T) {
 		t.Errorf("Wrong number of students: %d\n", c)
 	}
 
-	page, err := no.SelectPage("", 0, 3, Student{})
+	page, err := no.SelectPage("", 1, 3, Student{})
 	if err != nil {
 		t.Errorf("Failed")
 	}
 	if len(page) != 3 {
 		t.Errorf("Should have %d elements", len(page))
 	}
-	page, err = no.SelectPage("", 1, 3, Student{})
+	page, err = no.SelectPage("", 2, 3, Student{})
 	if err != nil {
 		t.Errorf("Failed")
 	}
@@ -143,9 +144,27 @@ func TestPage(t *testing.T) {
 		t.Errorf("Wrong id : %d\n", stu.ID)
 	}
 
-	page, err = no.SelectPage("WHERE grade=0", 1, 3, Student{})
+	page, err = no.SelectPage("WHERE grade=0", 2, 3, Student{})
 	stu = page[0].(*Student)
 	if stu.Name != "John" {
 		t.Errorf("Wrong name : %s\n", stu.Name)
+	}
+}
+
+func TestDelete(t *testing.T) {
+	no := NewConnection(_dbDriver, _dbParam)
+	no.Debug(true)
+	no.CreateTable(Student{})
+	for i := 0; i < 9; i++ {
+		no.Insert(Student{Name: "Kirsten", Grade: i % 3})
+	}
+
+	c, _ := no.Delete(`WHERE grade=0 AND name="Kirsten"`, Student{})
+	if c != 3 {
+		t.Errorf("Wrong number of students: %d\n", c)
+	}
+	c, _ = no.Delete(`WHERE name="Kirsten"`, Student{})
+	if c != 6 {
+		t.Errorf("Wrong number of students: %d\n", c)
 	}
 }
