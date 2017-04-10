@@ -96,6 +96,10 @@ func NewConnection(driver string, param string) *NotOrm {
 	}
 }
 
+func (no *NotOrm) DB() *sql.DB {
+	return no.db
+}
+
 func (no *NotOrm) Debug(d bool) {
 	no.debug = d
 }
