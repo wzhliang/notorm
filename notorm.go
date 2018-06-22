@@ -80,7 +80,7 @@ func getField(v interface{}, field string, _type reflect.Kind) interface{} {
 }
 
 type NotOrm struct {
-	db    *sql.DB
+	db *sql.DB
 	debug bool
 }
 
